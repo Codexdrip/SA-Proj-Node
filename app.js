@@ -82,6 +82,12 @@ app.get('/results', async (req, res) => {
     }
 });
 
+// Health Check Route
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+
 
 // 3. Start the Server
 app.listen(PORT, () => {
