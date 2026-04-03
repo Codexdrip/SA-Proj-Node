@@ -88,7 +88,7 @@ app.get('/health', (req, res) => {
 });
 
 
-const initDb = async () => {
+const initDb = async (retries = 5) => {
   const schema = `
     CREATE TABLE IF NOT EXISTS votes (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -97,13 +97,22 @@ const initDb = async () => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX (user_ip)
     );`;
-  try {
-    await pool.execute(schema);
-    console.log("Database schema verified/created.");
-  } catch (err) {
-    console.error("Schema Init Error:", err);
+
+  while (retries > 0) {
+    try {
+      await pool.execute(schema);
+      console.log("✅ Database schema verified/created.");
+      return; // Exit loop on success
+    } catch (err) {
+      retries--;
+      console.error(`❌ DB not ready. Retrying... (${retries} left)`);
+      // Wait 5 seconds before trying again
+      await new Promise(res => setTimeout(res, 5000));
+    }
   }
+  console.error("🛑 Could not connect to DB after multiple attempts.");
 };
+
 
 initDb(); // Run this on startup
 
