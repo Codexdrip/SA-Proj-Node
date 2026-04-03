@@ -88,6 +88,27 @@ app.get('/health', (req, res) => {
 });
 
 
+const initDb = async () => {
+  const schema = `
+    CREATE TABLE IF NOT EXISTS votes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      selection VARCHAR(255) NOT NULL,
+      user_ip VARCHAR(45) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX (user_ip)
+    );`;
+  try {
+    await pool.execute(schema);
+    console.log("Database schema verified/created.");
+  } catch (err) {
+    console.error("Schema Init Error:", err);
+  }
+};
+
+initDb(); // Run this on startup
+
+
+
 
 // 3. Start the Server
 app.listen(PORT, () => {
