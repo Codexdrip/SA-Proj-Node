@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloud Architecture Poll</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f7f6; }
+        .container { margin-top: 50px; display: flex; justify-content: center; gap: 40px; }
+        .option { background: white; padding: 20px; border-radius: 8px; border: 2px solid #ddd; }
+        img { width: 200px; height: 200px; object-fit: cover; border-radius: 4px; }
+        button { margin-top: 20px; padding: 10px 25px; background: #232f3e; color: white; border: none; cursor: pointer; }
+
+        .poll-results {
+            width: 440px; margin: 40px auto;
+        }
+        .bar-container {
+            height: 30px; width: 100%; background: #ddd;
+            display: flex; border-radius: 15px; overflow: hidden; margin-top: 10px;
+        }
+        #minato-bar { background: #ffae00; width: 50%; transition: width 0.5s; }
+        #itachi-bar { background: #8b0000; width: 50%; transition: width 0.5s; }
+        .labels { display: flex; justify-content: space-between; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Which Naruto character is your favorite v3?</h1>
+    <div class="container">
+        <div class="option">
+            <img src="/images/minato.webp" alt="Minato">
+            <br><input type="radio" name="poll" value="Minato" id="minato"> <label for="minato">Minato</label>
+        </div>
+        <div class="option">
+            <img src="/images/itachi.jpg" alt="Itachi">
+            <br><input type="radio" name="poll" value="Itachi" id="itachi"> <label for="itachi">Itachi</label>
+        </div>
+    </div>
+    <button onclick="castVote()">Submit Vote</button>
+    <div class="poll-results">
+        <div class="labels">
+            <span id="minato-label">Minato: 50%</span>
+            <span id="itachi-label">Itachi: 50%</span>
+        </div>
+        <div class="bar-container">
+            <div id="minato-bar"></div>
+            <div id="itachi-bar"></div>
+        </div>
+    </div>
+
+    <script>
+        async function updateResults() {
+            const res = await fetch('/results');
+            const data = await res.json();
+            
+            // Update the bar widths
+            document.getElementById('minato-bar').style.width = data.minatoPer + '%';
+            document.getElementById('itachi-bar').style.width = data.itachiPer + '%';
+            
+            // Update the text labels
+            document.getElementById('minato-label').innerText = `Minato: ${data.minatoPer}%`;
+            document.getElementById('itachi-label').innerText = `Itachi: ${data.itachiPer}%`;
+        }
+
+        async function castVote() {
+            const selected = document.querySelector('input[name="poll"]:checked');
+            if (!selected) return alert("Please pick one!");
+
+            const response = await fetch('/vote', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ selection: selected.value })
+            });
+            const data = await response.json();
+            alert(data.message);
+            updateResults(); // Update the results after casting a vote
+        }
+        // Initial load of results        updateResults();
+        // Show results immediately when the page loads
+        updateResults();
+    </script>
+</body>
+</html>
