@@ -88,7 +88,7 @@ app.get('/health', (req, res) => {
 });
 
 
-const initDb = async (retries = 5) => {
+const initDb = async (retries = 25) => {
   const schema = `
     CREATE TABLE IF NOT EXISTS votes (
       id INT AUTO_INCREMENT PRIMARY KEY,
