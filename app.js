@@ -16,10 +16,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 const pool = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
+    port: process.env.DB_PORT || 3306,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit: 20,
     queueLimit: 0
 });
 
@@ -87,8 +88,29 @@ app.get('/health', (req, res) => {
   res.status(200).send('OK');
 });
 
+retryAmount = 150; // Total time = 150 * 5s = 750s (just over 12 minutes)
+const initDb = async (retries = retryAmount) => {
+  // 1. Create a temporary connection WITHOUT a database name
+  const tempPool = mysql.createPool({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASS,
+  });
 
-const initDb = async (retries = 25) => {
+  while (retries > 0) {
+    try {
+        // 2. Ensure the database itself exists
+        await tempPool.execute(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME}`);
+        console.log(`✅ Database ${process.env.DB_NAME} verified.`);
+        await tempPool.end(); // Close temp connection
+        break;
+    } catch (err) {
+        retries--;
+        console.error("Failed to create/verify database:", err);
+    }
+  }
+
+
   const schema = `
     CREATE TABLE IF NOT EXISTS votes (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -97,7 +119,7 @@ const initDb = async (retries = 25) => {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       INDEX (user_ip)
     );`;
-
+  retries = retryAmount; // Reset retries for schema creation
   while (retries > 0) {
     try {
       await pool.execute(schema);
